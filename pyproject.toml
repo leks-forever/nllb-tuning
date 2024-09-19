@@ -1,0 +1,67 @@
+[tool.poetry]
+name = "nllb-tuning"
+version = "0.1.0"
+description = ""
+authors = ["Rustam Akimov"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+torch = "^2.4.0"
+transformers = "^4.44.2"
+numpy = "<2.0.0"
+pytorch-lightning = "^2.3.3"
+tensorboard = "^2.17.0"
+typer = "^0.12.5"
+sentencepiece = "^0.2.0"
+datasets = "^2.21.0"
+sacremoses = "^0.1.1"
+sacrebleu = "^2.4.3"
+ipykernel = "^6.29.5"
+protobuf = "^5.28.0"
+scikit-learn = "^1.5.2"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.6.3"
+pre-commit = "^3.7.1"
+mypy = "^1.10.0"
+types-requests = "^2.32.0.20240602"
+ipykernel = "^6.29.5"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "tests", "research", "data"]
+
+[tool.ruff.lint]
+ignore = ["RUF002", "RUF003", "T201", "ERA001", "FBT002", "FBT001", "A001", "C901", "S403", "S301", "RUF001"]
+fixable = ["I", "B", "RUF", "F"]
+select = [
+    "I",     # Isort rules
+    "C90",   # Maccabe complexity
+    "ASYNC", # flake8-async
+    "S",     #  flake8-bandit
+    "BLE",   # flake8-blind-except
+    "B",     # flake8-bugbear
+    "A",     # flake8-builtins
+    "C4",    # flake8-comprehensions
+    "T20",   # flake8-print
+    # "RET",   # flake8-return
+    "SLF", # flake8-self
+    "RUF", # ruff
+    "ERA", # eradicate
+    "PTH", # flake8-use-pathlib
+    "FBT", # flake8-boolean-trap
+    "F",   # pyflakes
+]
+preview = true
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F403"]
+
+[tool.mypy]
+exclude = [".venv", "tests", "research", "data"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
