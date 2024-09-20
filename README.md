@@ -3,6 +3,12 @@
 ### Raw experimental solution
 Download [bible.csv](https://huggingface.co/datasets/leks-forever/bible-lezghian-russian) and place it in the [data](data) folder
 
+Install requirements:
+```bash
+pip install poetry
+poetry install
+```
+
 Scripts:    
 [src/utils.py](src/utils.py) - split prepaired df to train/test/val     
 [src/train_tokenizer.py](src/train_model.py) - update tokenizer and model embeddings according to tokenizer     
@@ -15,4 +21,7 @@ Notebooks:
 [notebooks/convert_to_transformers.ipynb](notebooks/convert_to_transformers.ipynb) -  convert Lighting ckpt to transformers       
 [notebooks/predict_model.ipynb](notebooks/predict_model.ipynb) - predict NLLB model (Recommend)
 
-
+Logging:
+```bash
+tensorboard --logdir tb_logs/
+```
