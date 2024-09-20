@@ -12,34 +12,38 @@ from transformers import NllbTokenizer
 
 LANGS = [('ru', 'rus_Cyrl'), ('lez', 'lez_Cyrl')]
 
-mpn = MosesPunctNormalizer(lang="en")
-mpn.substitutions = [
-    (re.compile(r), sub) for r, sub in mpn.substitutions
-]
+class TextPreprocessor:
+    def __init__(self, lang: str = "en", replace_by: str = " "):
+        # Инициализация MosesPunctNormalizer
+        self.mpn = MosesPunctNormalizer(lang=lang)
+        self.mpn.substitutions = [
+            (re.compile(r), sub) for r, sub in self.mpn.substitutions
+        ]
+        # Инициализация функции замены непечатаемых символов
+        self.replace_nonprint = self.get_non_printing_char_replacer(replace_by)
 
-def get_non_printing_char_replacer(replace_by: str = " ") -> tp.Callable[[str], str]:
-    non_printable_map = {
-        ord(c): replace_by
-        for c in (chr(i) for i in range(sys.maxunicode + 1))
-        # same as \p{C} in perl
-        # see https://www.unicode.org/reports/tr44/#General_Category_Values
-        if unicodedata.category(c) in {"C", "Cc", "Cf", "Cs", "Co", "Cn"}
-    }
+    def get_non_printing_char_replacer(self, replace_by: str) -> tp.Callable[[str], str]:
+        non_printable_map = {
+            ord(c): replace_by
+            for c in (chr(i) for i in range(sys.maxunicode + 1))
+            # same as \p{C} in perl
+            # see https://www.unicode.org/reports/tr44/#General_Category_Values
+            if unicodedata.category(c) in {"C", "Cc", "Cf", "Cs", "Co", "Cn"}
+        }
 
-    def replace_non_printing_char(line) -> str:
-        return line.translate(non_printable_map)
+        def replace_non_printing_char(line: str) -> str:
+            return line.translate(non_printable_map)
 
-    return replace_non_printing_char
+        return replace_non_printing_char
 
-replace_nonprint = get_non_printing_char_replacer(" ")
-
-
-def preproc(text):
-    clean = mpn.normalize(text)
-    clean = replace_nonprint(clean)
-    # replace 𝓕𝔯𝔞𝔫𝔠𝔢𝔰𝔠𝔞 by Francesca
-    clean = unicodedata.normalize("NFKC", clean)
-    return clean
+    def preprocess(self, text: str) -> str:
+        # Шаг 1: Нормализация пунктуации с использованием MosesPunctNormalizer
+        clean = self.mpn.normalize(text)
+        # Шаг 2: Замена непечатаемых символов
+        clean = self.replace_nonprint(clean)
+        # Шаг 3: Нормализация текста (например, замена "𝓕𝔯𝔞𝔫𝔠𝔢𝔰𝔠𝔞" на "Francesca")
+        clean = unicodedata.normalize("NFKC", clean)
+        return clean
 
 
 class ThisDataset(Dataset):
@@ -63,6 +67,7 @@ class CollateFn():
         self.tokenizer = tokenizer
         self.ignore_index = ignore_index
         self.max_length = max_length
+        self.text_preprocessor = TextPreprocessor()
 
     def __call__(self, batch: list) -> dict:
         langs = random.sample(LANGS, 2) # Random choice between [ru->lez, lez->ru]
@@ -73,8 +78,8 @@ class CollateFn():
 
         x_texts, y_texts = [], []
         for item in batch:
-            x_texts.append(preproc(item[l1]))
-            y_texts.append(preproc(item[l2]))
+            x_texts.append(self.text_preprocessor.preprocess(item[l1]))
+            y_texts.append(self.text_preprocessor.preprocess(item[l2]))
 
         self.tokenizer.src_lang = lang1
         # x = self.tokenizer(x_texts, return_tensors='pt', padding='longest')
@@ -116,6 +121,8 @@ class TestCollateFn():
         self.tokenizer.tgt_lang = tgt_lang
         self.max_length = max_length
 
+        self.text_preprocessor = TextPreprocessor()
+
         # TODO: Change this
         self.covert = {
             "rus_Cyrl": "ru",
@@ -133,8 +140,8 @@ class TestCollateFn():
     def pad_batch(self, batch: list) -> dict:        
         x_texts, y_texts = [], []
         for item in batch:
-            x_texts.append(preproc(item[self.covert[self.tokenizer.src_lang]]))
-            y_texts.append(preproc(item[self.covert[self.tokenizer.tgt_lang]]))
+            x_texts.append(self.text_preprocessor.preprocess(item[self.covert[self.tokenizer.src_lang]]))
+            y_texts.append(self.text_preprocessor.preprocess(item[self.covert[self.tokenizer.tgt_lang]]))
 
         inputs = self.tokenizer(x_texts, return_tensors='pt', padding='longest')
         # inputs = self.tokenizer(x_texts,  return_tensors='pt', padding=True, truncation=True, max_length=self.max_length)

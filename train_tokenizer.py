@@ -10,7 +10,7 @@ from tqdm import tqdm
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 from transformers.models.nllb.tokenization_nllb import FAIRSEQ_LANGUAGE_CODES
 
-from dataset import preproc
+from dataset import TextPreprocessor
 
 # TODO: REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -26,7 +26,7 @@ df = pd.concat([df_train, df_test, df_val], ignore_index=True)
 # https://github.com/facebookresearch/stopes/blob/main/stopes/pipelines/monolingual/monolingual_line_processor.py#L21
  
 
- 
+text_preprocessor = TextPreprocessor()
  
  
 def update_nllb_tokenizer(
@@ -71,7 +71,7 @@ def update_nllb_tokenizer(
  
 print("Creating corpus and counting chars in it")
 all_texts = df["lez"].dropna().tolist()
-all_text_normalized = [preproc(t) for t in tqdm(all_texts)]
+all_text_normalized = [text_preprocessor.preprocess(t) for t in tqdm(all_texts)]
  
 chars_cnt = Counter(c for t in all_text_normalized for c in t)
 required_chars = ''.join([
