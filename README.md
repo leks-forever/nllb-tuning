@@ -14,7 +14,7 @@ Scripts:
 [src/train_tokenizer.py](src/train_model.py) - update tokenizer and model embeddings according to tokenizer     
 [src/train_model.py](src/train_model.py) - finetune NLLB model      
 [src/test_model.py](src/test_model.py) - test NLLB model  using BLEU and chrF       
-[src/predict_model.py](src/predict_model.py) - predict NLLB model 
+[src/predict_model.py](src/predict_model.py) - predict NLLB model   
 [src/dataset.py](src/dataset.py) - PyTorch train/test datasets
 
 Notebooks:  
