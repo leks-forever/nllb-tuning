@@ -12,7 +12,7 @@ Scripts:
 [src/dataset.py](src/dataset.py) - PyTorch train/test datasets
 
 Notebooks:  
-[notebooks/convert_to_transformers.ipynb](notebooks/convert_to_transformers.ipynb) -  convert Lighting ckpt to transformers     
+[notebooks/convert_to_transformers.ipynb](notebooks/convert_to_transformers.ipynb) -  convert Lighting ckpt to transformers       
 [notebooks/predict_model.ipynb](notebooks/predict_model.ipynb) - predict NLLB model (Recommend)
 
 
