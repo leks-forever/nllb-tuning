@@ -22,14 +22,14 @@ from transformers import (
 # from pytorch_lightning.strategies import FSDPStrategy
 from transformers.optimization import Adafactor
 
-from dataset import CollateFn, LangCollateFn, ThisDataset
+from src.dataset import CollateFn, LangCollateFn, ThisDataset
 
 torch.set_float32_matmul_precision('medium')
 
 # TODO: Loading via config
 
 """
-python -m models.scripts.train_model
+python -m src.train_model
 """
 
 class LightningModel(pl.LightningModule):

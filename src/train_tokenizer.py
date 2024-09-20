@@ -10,7 +10,7 @@ from tqdm import tqdm
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 from transformers.models.nllb.tokenization_nllb import FAIRSEQ_LANGUAGE_CODES
 
-from dataset import TextPreprocessor
+from src.dataset import TextPreprocessor
 
 # TODO: REFACTOR THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 

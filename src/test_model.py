@@ -9,10 +9,10 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 
 from dataset import TestCollateFn, ThisDataset
-from train_model import LightningModel
+from src.train_model import LightningModel
 
 """
-python -m models.scripts.test_model
+python -m src.test_model
 """
 
 def test(

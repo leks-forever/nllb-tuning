@@ -4,10 +4,10 @@ import torch
 import typer
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 
-from train_model import LightningModel
+from src.train_model import LightningModel
 
 """
-python -m models.scripts.predict_model
+python -m src.predict_model
 """
 
 def predict(    
