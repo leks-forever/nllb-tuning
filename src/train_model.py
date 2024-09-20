@@ -71,11 +71,12 @@ class LightningModel(pl.LightningModule):
         src, tgt = batch.values()
         
         loss = self.model(**src, labels=tgt.input_ids).loss
-        # for CombinedDataloader metric is [val_loss/dataloader_idx_0', 'val_loss/dataloader_idx_1']
-        if "val_loss" not in self.trainer.callback_metrics: # Do not delete this! # TODO: Think about it
-            self.trainer.callback_metrics["val_loss"] = 0 # init loading
-            # self.log("val_loss", loss, sync_dist=True, add_dataloader_idx=False) # ckpt loading
-            # self.logger.experiment.add_scalar("val_loss", loss, global_step=self.global_step)
+       
+        if "val_loss" not in self.trainer.callback_metrics: # `Quick Fix`; Do not delete this! # TODO: Think about it
+            if self.trainer.ckpt_path:
+                self.log("val_loss", loss, sync_dist=True, add_dataloader_idx=False)
+            else:
+                self.trainer.callback_metrics["val_loss"] = 0
         else:
             self.log("val_loss", loss, sync_dist=True)
 
