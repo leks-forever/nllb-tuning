@@ -18,14 +18,17 @@ def predict(
     sentence: str = "Римдин аскерар ва гьакӀни чӀехи хахамрини  фарисейри ракъурнавай нуькерар Ягьуд галаз багъдиз атана. Абурув виридав яракьар, чирагъар ва шемгьалар гвай."
 ):
     model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
+    # Another option:
+    # model = AutoModelForSeq2SeqLM.from_config(config = M2M100Config.from_json_file("models/re-init/config.json"))
+
     tokenizer = NllbTokenizer.from_pretrained(tokenizer_path, vocab_file = tokenizer_vocab_file_path)
 
     print(model)
 
-    # GPU loading
-    # model = LightningModel.load_from_checkpoint(ckpt_path)
+    # Option 1:
+    # model = LightningModel.load_from_checkpoint(ckpt_path, map_location=torch.device("cuda:1"), model = model, tokenizer = tokenizer)
 
-    # Different device loading
+    # Option 2:
     ckpt = torch.load(ckpt_path, map_location=torch.device("cuda:1"))
     model = LightningModel(model, tokenizer)
     model.load_state_dict(ckpt['state_dict'])

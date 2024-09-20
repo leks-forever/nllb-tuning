@@ -1,7 +1,7 @@
 import json
-import os
 import shutil
 from collections import Counter
+from pathlib import Path
 
 import pandas as pd
 import sentencepiece as spm
@@ -11,6 +11,10 @@ from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 from transformers.models.nllb.tokenization_nllb import FAIRSEQ_LANGUAGE_CODES
 
 from src.dataset import TextPreprocessor
+
+"""
+python -m src.train_tokenizer
+"""
 
 # this code is adapted from  the Stopes repo of the NLLB team
 # https://github.com/facebookresearch/stopes/blob/main/stopes/pipelines/monolingual/monolingual_line_processor.py#L21
@@ -39,23 +43,26 @@ def update_nllb_tokenizer(old_tokenizer: NllbTokenizer, new_spm_path: str, new_l
     Returns:
         Updated NllbTokenizer.
     """
-    TKN_DIR = "old_tokenizer"  # Temporary directory for tokenizer storage
+    TKN_DIR = Path("old_tokenizer")  # Temporary directory for tokenizer storage
     old_tokenizer.save_pretrained(TKN_DIR)
     
     # Modify tokenizer configuration
-    with open(f"{TKN_DIR}/tokenizer_config.json", "r") as f:
+    config_path = TKN_DIR / "tokenizer_config.json"
+    with config_path.open("r") as f:
         cfg = json.load(f)
     cfg["added_tokens_decoder"] = {k: v for k, v in cfg["added_tokens_decoder"].items() if k in ["0", "1", "2", "3"]}
     cfg["additional_special_tokens"] = []
     
-    with open(f"{TKN_DIR}/tokenizer_config.json", "w") as f:
+    with config_path.open("w") as f:
         json.dump(cfg, f, indent=2)
 
     # Clean up old added tokens and sentencepiece model
-    os.remove(f"{TKN_DIR}/added_tokens.json")
-    os.remove(f"{TKN_DIR}/special_tokens_map.json")
-    os.remove(f"{TKN_DIR}/sentencepiece.bpe.model")
-    shutil.copy(new_spm_path, f"{TKN_DIR}/sentencepiece.bpe.model")
+    (TKN_DIR / "added_tokens.json").unlink()
+    (TKN_DIR / "special_tokens_map.json").unlink()
+    (TKN_DIR / "sentencepiece.bpe.model").unlink()
+
+    # Copy new SentencePiece model
+    shutil.copy(new_spm_path, TKN_DIR / "sentencepiece.bpe.model")
 
     # Load new tokenizer with additional language codes
     new_tokenizer = NllbTokenizer.from_pretrained(
@@ -67,6 +74,8 @@ def update_nllb_tokenizer(old_tokenizer: NllbTokenizer, new_spm_path: str, new_l
 
 # Main script execution
 if __name__ == "__main__":
+    MODEL_ID = 'facebook/nllb-200-distilled-600M'
+
     print("Creating corpus and counting chars in it")
     all_texts = df["lez"].dropna().tolist()
     all_text_normalized = [text_preprocessor.preprocess(t) for t in tqdm(all_texts)]
@@ -79,8 +88,8 @@ if __name__ == "__main__":
     
     all_texts_file = 'lez_texts_plain.txt'
     SPM_PREFIX = 'spm_lez_16k'
-    with open(all_texts_file, 'w') as f:
-        for i, text in enumerate(all_texts):
+    with Path(all_texts_file).open('w') as f:
+        for _, text in enumerate(all_texts):
             print(text, file=f)
 
     print("Tokenizer training")
@@ -102,7 +111,7 @@ if __name__ == "__main__":
     )
  
     print("Adding missing tokens to NLLB tokenizer and saving result")
-    tokenizer = NllbTokenizer.from_pretrained('facebook/nllb-200-distilled-600M')
+    tokenizer = NllbTokenizer.from_pretrained(MODEL_ID)
     sp_trained = spm.SentencePieceProcessor(model_file=f'{SPM_PREFIX}.model')
     added_spm = sp_pb2_model.ModelProto()
     added_spm.ParseFromString(sp_trained.serialized_model_proto())
@@ -121,19 +130,19 @@ if __name__ == "__main__":
             old_spm.pieces.append(new_p)
 
     NEW_SPM_NAME = 'spm_nllb_lez_268k.model'
-    with open(NEW_SPM_NAME, 'wb') as f:
+    with Path(NEW_SPM_NAME).open('wb') as f:
         f.write(old_spm.SerializeToString())
 
     # Reload tokenizer and update the model
     print("Reloading NLLB tokenizer and resizing model")
-    tokenizer_old = NllbTokenizer.from_pretrained('facebook/nllb-200-distilled-600M')
+    tokenizer_old = NllbTokenizer.from_pretrained(MODEL_ID)
     tokenizer = update_nllb_tokenizer(tokenizer_old, NEW_SPM_NAME, new_lang_codes=["lez_Cyrl"])
 
     # Check tokenizer updates
     print(f"Tokenizer length after adding 'lez_Cyrl': {len(tokenizer)}")
 
     # Load and resize the model
-    model = AutoModelForSeq2SeqLM.from_pretrained('facebook/nllb-200-distilled-600M')
+    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_ID)
     model.resize_token_embeddings(len(tokenizer))
 
     # Reinitialize new embeddings

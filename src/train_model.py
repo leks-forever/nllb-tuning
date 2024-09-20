@@ -8,7 +8,7 @@ import typer
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import LearningRateMonitor, ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
-from pytorch_lightning.utilities import CombinedLoader  #, rank_zero_only
+from pytorch_lightning.utilities import CombinedLoader
 
 # from torch.optim import AdamW
 from torch.utils.data import DataLoader
@@ -18,8 +18,6 @@ from transformers import (
     # get_constant_schedule_with_warmup,
     get_cosine_schedule_with_warmup,
 )
-
-# from pytorch_lightning.strategies import FSDPStrategy
 from transformers.optimization import Adafactor
 
 from src.dataset import CollateFn, LangCollateFn, ThisDataset
@@ -156,41 +154,14 @@ class LightningModel(pl.LightningModule):
     
     def convert_ckpt_to_tranformers(self, save_directory: str):
         self.model.save_pretrained(save_directory)
-
-# @rank_zero_only
-# def prepare_model_and_tokenizer(model_name, vocab_file, reinit_model_path):
-#     # TODO: Refactor this
-
-#     # loading the tokenizers
-#     tokenizer_old = NllbTokenizer.from_pretrained(model_name)
-#     tokenizer = NllbTokenizer.from_pretrained(model_name, vocab_file=vocab_file)
-
-#     added_vocab = set(tokenizer.get_vocab()).difference(set(tokenizer_old.get_vocab()))
-
-#     model = AutoModelForSeq2SeqLM.from_pretrained(model_name)
-#     model.resize_token_embeddings(len(tokenizer))
-
-#     # re-initializing the new embeddings
-#     for t in tqdm(added_vocab, desc = "Re-initializing new embeddings"):
-#         tt = tokenizer_old(t, add_special_tokens=False).input_ids
-#         if len(tt) == 0:
-#             tt = [tokenizer_old.unk_token_id]
-#         idx = tokenizer.convert_tokens_to_ids(t)
-#         model.model.shared.weight.data[idx] = model.model.shared.weight.data[tt].mean(0)
-
-#     model.save_pretrained(reinit_model_path)
-#     tokenizer.save_pretrained(reinit_model_path)
-
-#     del model, tokenizer
-    
+        self.tokenizer.save_pretrained(save_directory)
 
 def train(
     batch_size: int = 16, 
     checkpoints_dir: str = "models/it_1", 
     checkpoint_path: Optional[str] = None,  
-    model_name: str = "facebook/nllb-200-distilled-600M", 
     vocab_file: str = "models/re-init/sentencepiece.bpe.model",
-    reinit_model_path: str = "models/re-init",
+    model_path: str = "models/re-init",
     train_df_path: str = "data/train.csv",
     val_df_path: str = "data/val.csv"
 ):
@@ -207,9 +178,9 @@ def train(
         save_last=True
     )
         
-    model = AutoModelForSeq2SeqLM.from_pretrained(reinit_model_path)
+    model = AutoModelForSeq2SeqLM.from_pretrained(model_path)
     model.train()
-    tokenizer = NllbTokenizer.from_pretrained(reinit_model_path, vocab_file=vocab_file)
+    tokenizer = NllbTokenizer.from_pretrained(model_path, vocab_file=vocab_file)
 
     train_dataloader = DataLoader(ThisDataset(train_df, random=True), batch_size=batch_size, shuffle=True, collate_fn=CollateFn(tokenizer), num_workers=14)
 
