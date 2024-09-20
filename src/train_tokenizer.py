@@ -12,7 +12,9 @@ from transformers.models.nllb.tokenization_nllb import FAIRSEQ_LANGUAGE_CODES
 
 from src.dataset import TextPreprocessor
 
-# Load and concatenate datasets
+# this code is adapted from  the Stopes repo of the NLLB team
+# https://github.com/facebookresearch/stopes/blob/main/stopes/pipelines/monolingual/monolingual_line_processor.py#L21
+
 def load_datasets(train_path: str, test_path: str, val_path: str) -> pd.DataFrame:
     """Loads and concatenates training, testing, and validation datasets into a single DataFrame."""
     df_train = pd.read_csv(train_path)
@@ -61,44 +63,31 @@ def update_nllb_tokenizer(old_tokenizer: NllbTokenizer, new_spm_path: str, new_l
         additional_special_tokens=sorted(FAIRSEQ_LANGUAGE_CODES + new_lang_codes),
     )
     return new_tokenizer
+ 
 
-def preprocess_texts(df: pd.DataFrame, column: str) -> list[str]:
-    """
-    Preprocesses the texts from a specified column in the DataFrame.
+# Main script execution
+if __name__ == "__main__":
+    print("Creating corpus and counting chars in it")
+    all_texts = df["lez"].dropna().tolist()
+    all_text_normalized = [text_preprocessor.preprocess(t) for t in tqdm(all_texts)]
     
-    Args:
-        df: DataFrame containing the texts.
-        column: The column name with texts to preprocess.
+    chars_cnt = Counter(c for t in all_text_normalized for c in t)
+    required_chars = ''.join([
+        k for k, v in chars_cnt.most_common() 
+        if v >= 3 and k not in ' '
+    ])
     
-    Returns:
-        List of preprocessed texts.
-    """
-    all_texts = df[column].dropna().tolist()
-    return [text_preprocessor.preprocess(t) for t in tqdm(all_texts)]
+    all_texts_file = 'lez_texts_plain.txt'
+    SPM_PREFIX = 'spm_lez_16k'
+    with open(all_texts_file, 'w') as f:
+        for i, text in enumerate(all_texts):
+            print(text, file=f)
 
-def create_tokenizer(all_texts: list[str], output_file: str, vocab_size: int, spm_prefix: str) -> str:
-    """
-    Trains a SentencePiece tokenizer on the given texts and saves it to disk.
-    
-    Args:
-        all_texts: List of all texts for training the tokenizer.
-        output_file: Output file to store plain texts.
-        vocab_size: Desired vocabulary size.
-        spm_prefix: Prefix for the SentencePiece model.
-    
-    Returns:
-        Path to the trained SentencePiece model.
-    """
-    # Write all texts to file
-    with open(output_file, 'w') as f:
-        for text in all_texts:
-            f.write(f"{text}\n")
-    
-    # Train the SentencePiece model
+    print("Tokenizer training")
     spm.SentencePieceTrainer.train(
-        input=output_file,
-        model_prefix=spm_prefix,
-        vocab_size=vocab_size,
+        input=all_texts_file,
+        model_prefix=SPM_PREFIX,
+        vocab_size=13398,  
         character_coverage=1,
         num_threads=16,
         train_extremely_large_corpus=False,
@@ -108,37 +97,22 @@ def create_tokenizer(all_texts: list[str], output_file: str, vocab_size: int, sp
         pad_id=0,
         eos_id=1,
         unk_id=2,
-        bos_id=-1
+        bos_id=-1,
+        required_chars=required_chars,
     )
-    return f"{spm_prefix}.model"
-
-# Main script execution
-if __name__ == "__main__":
-    print("Creating corpus and counting chars in it")
-    all_text_normalized = preprocess_texts(df, "lez")
-
-    # Count character frequencies
-    chars_cnt = Counter(c for t in all_text_normalized for c in t)
-    required_chars = ''.join([k for k, v in chars_cnt.most_common() if v >= 3 and k not in ' '])
-
-    # Tokenizer training
-    all_texts_file = 'lez_texts_plain.txt'
-    SPM_PREFIX = 'spm_lez_16k'
-    print("Tokenizer training")
-    trained_spm_path = create_tokenizer(all_text_normalized, all_texts_file, vocab_size=13398, spm_prefix=SPM_PREFIX)
-
+ 
     print("Adding missing tokens to NLLB tokenizer and saving result")
     tokenizer = NllbTokenizer.from_pretrained('facebook/nllb-200-distilled-600M')
-    sp_trained = spm.SentencePieceProcessor(model_file=trained_spm_path)
+    sp_trained = spm.SentencePieceProcessor(model_file=f'{SPM_PREFIX}.model')
     added_spm = sp_pb2_model.ModelProto()
     added_spm.ParseFromString(sp_trained.serialized_model_proto())
-    
+
     # Merge new tokens with old tokenizer
     old_spm = sp_pb2_model.ModelProto()
     old_spm.ParseFromString(tokenizer.sp_model.serialized_model_proto())
     nllb_tokens_set = {p.piece for p in old_spm.pieces}
     prev_min_score = old_spm.pieces[-1].score
-    
+
     for p in added_spm.pieces:
         if p.type == 1 and p.piece not in nllb_tokens_set:
             new_p = sp_pb2_model.ModelProto().SentencePiece()
@@ -167,7 +141,7 @@ if __name__ == "__main__":
     added_vocab = set(tokenizer.get_vocab()).difference(set(tokenizer_old.get_vocab()))
     for t in tqdm(added_vocab):
         tt = tokenizer_old(t, add_special_tokens=False).input_ids
-        if not tt:
+        if len(tt) == 0:
             tt = [tokenizer_old.unk_token_id]
         idx = tokenizer.convert_tokens_to_ids(t)
         model.model.shared.weight.data[idx] = model.model.shared.weight.data[tt].mean(0)

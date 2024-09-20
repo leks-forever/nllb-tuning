@@ -60,7 +60,7 @@ preview = true
 "__init__.py" = ["E402", "F403"]
 
 [tool.mypy]
-exclude = [".venv", "tests", "research", "data"]
+exclude = [".venv", "tests", "research", "data", "notebooks"]
 
 [build-system]
 requires = ["poetry-core"]
