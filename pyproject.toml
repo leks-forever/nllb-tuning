@@ -20,6 +20,7 @@ sacrebleu = "^2.4.3"
 ipykernel = "^6.29.5"
 protobuf = "^5.28.0"
 scikit-learn = "^1.5.2"
+gradio = "^4.44.0" 
 
 [tool.poetry.group.dev.dependencies]
 ruff = "^0.6.3"
