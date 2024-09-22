@@ -2,7 +2,7 @@
 name = "nllb-tuning"
 version = "0.1.0"
 description = ""
-authors = ["Rustam Akimov"]
+authors = ["Rustam Akimov", "Said Azizov"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
