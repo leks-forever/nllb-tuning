@@ -8,19 +8,22 @@
 | В следующем году я планирую посетить несколько стран, чтобы познакомиться с их культурой.                   | Зун къведай йисуз са шумуд уьлкведиз, абурун адетралди чир хьун патал, къвез кӀанзава.                           |
 | После долгого рабочего дня приятно расслабиться с книгой и чашкой чая.                                      | Гзаф кӀвалах авурдалай кьулухъ ктаб ва са гъам гваз ял акьадайвал хъсан я.                                      |
 
+### Install requirements:
+```bash
+pip install poetry
+poetry install
+```
 
+### Run Demo 
+```bash
+python app.py
+```
 ### NLLB-Tuning
 
 You can download the finetuned model from this [link](https://huggingface.co/leks-forever/nllb-200-distilled-600M).
 
 ### Raw experimental solution
 Download [bible.csv](https://huggingface.co/datasets/leks-forever/bible-lezghian-russian) and place it in the [data](data) folder.
-
-Install requirements:
-```bash
-pip install poetry
-poetry install
-```
 
 Scripts:    
 [src/utils.py](src/utils.py) - split prepaired df to train/test/val     
