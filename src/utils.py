@@ -4,7 +4,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def split_data(df_path: str = "data/bible.csv",  save_dir: str = "data"):
+def split_data(df_path: str = "data/combined_dataset_canonized.csv",  save_dir: str = "data"):
     df = pd.read_csv(df_path)
     
     ru = df['text_ru'].values

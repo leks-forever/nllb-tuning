@@ -159,7 +159,7 @@ class LightningModel(pl.LightningModule):
 
 def train(
     batch_size: int = 16, 
-    checkpoints_dir: str = "models/it_1", 
+    checkpoints_dir: str = "models/it_2", 
     checkpoint_path: Optional[str] = None,  
     vocab_file: str = "models/re-init/sentencepiece.bpe.model",
     model_path: str = "models/re-init",
@@ -168,7 +168,7 @@ def train(
 ):
     train_df, val_df = pd.read_csv(train_df_path), pd.read_csv(val_df_path)
     
-    logger = TensorBoardLogger("./tb_logs", version = "it_1")
+    logger = TensorBoardLogger("./tb_logs", version = "it_2")
 
     checkpoint_callback = ModelCheckpoint(
         dirpath = checkpoints_dir,
@@ -193,7 +193,7 @@ def train(
     lr_monitor = LearningRateMonitor(logging_interval='step')
     lightning_model = LightningModel(model)
 
-    trainer = Trainer(max_steps=110000, callbacks=[checkpoint_callback, lr_monitor], logger=logger, devices = [1], log_every_n_steps=1, val_check_interval = 388, precision="32-true") # check_val_every_n_epoch=1 val_check_interval=4482,
+    trainer = Trainer(max_steps=110000, callbacks=[checkpoint_callback, lr_monitor], logger=logger, devices = [0], log_every_n_steps=1, val_check_interval = 388, precision="32-true") # check_val_every_n_epoch=1 val_check_interval=4482,
     trainer.fit(model=lightning_model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloaders, ckpt_path=checkpoint_path)
 
 

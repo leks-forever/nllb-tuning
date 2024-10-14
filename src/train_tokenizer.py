@@ -96,7 +96,7 @@ if __name__ == "__main__":
     spm.SentencePieceTrainer.train(
         input=all_texts_file,
         model_prefix=SPM_PREFIX,
-        vocab_size=13398,  
+        vocab_size=16000, # 13398  
         character_coverage=1,
         num_threads=16,
         train_extremely_large_corpus=False,
