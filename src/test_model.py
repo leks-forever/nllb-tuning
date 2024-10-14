@@ -8,7 +8,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader
 from transformers import AutoModelForSeq2SeqLM, NllbTokenizer
 
-from dataset import TestCollateFn, ThisDataset
+from src.dataset import TestCollateFn, ThisDataset
 from src.train_model import LightningModel
 
 """
