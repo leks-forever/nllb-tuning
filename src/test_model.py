@@ -20,7 +20,7 @@ def test(
     model_path: str = "models/re-init", 
     tokenizer_path: str = "models/re-init",
     tokenizer_vocab_file_path: str = "models/re-init/sentencepiece.bpe.model", 
-    ckpt_path: Optional[Union[str, None]] = "models/it_1/epoch=17-val_loss=1.48184.ckpt",
+    ckpt_path: Optional[Union[str, None]] = "models/it_1/epoch=17-val_loss=1.48184.ckpt", # change to actual ckpt
 ):
     test_df = pd.read_csv(df_path)
 
@@ -28,15 +28,17 @@ def test(
     model.eval()
     tokenizer = NllbTokenizer.from_pretrained(tokenizer_path, vocab_file = tokenizer_vocab_file_path)
 
-    test_dataset = ThisDataset(test_df, random=False)
-    test_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'rus_Cyrl', 'lez_Cyrl', num_beams=1))
+    logger = TensorBoardLogger("./tb_logs", version="it_2", name = "test")
 
-    logger = TensorBoardLogger("./tb_logs", version="it_1", name = "test")
+    test_dataset = ThisDataset(test_df, random=False)
+    rus_lez_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'rus_Cyrl', 'lez_Cyrl', num_beams=1))
+    lez_rus_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'lez_Cyrl', 'rus_Cyrl', num_beams=1))
 
     lightning_model = LightningModel(model, tokenizer)
 
-    trainer = Trainer(logger=logger, devices = [1], log_every_n_steps=1, precision="32-true")
-    trainer.test(model=lightning_model, dataloaders=test_dataloader, ckpt_path=ckpt_path)
+    trainer = Trainer(logger=logger, devices = [0], log_every_n_steps=1, precision="32-true")
+    trainer.test(model=lightning_model, dataloaders=rus_lez_dataloader, ckpt_path=ckpt_path)
+    trainer.test(model=lightning_model, dataloaders=lez_rus_dataloader, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":
     typer.run(test)
