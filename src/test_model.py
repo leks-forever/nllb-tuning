@@ -31,14 +31,12 @@ def test(
     logger = TensorBoardLogger("./tb_logs", version="it_2", name = "test")
 
     test_dataset = ThisDataset(test_df, random=False)
-    rus_lez_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'rus_Cyrl', 'lez_Cyrl', num_beams=1))
-    lez_rus_dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'lez_Cyrl', 'rus_Cyrl', num_beams=1))
+    dataloader = DataLoader(test_dataset, batch_size=1, num_workers=14, collate_fn = TestCollateFn(tokenizer, 'rus_Cyrl', 'lez_Cyrl', num_beams=1))
 
     lightning_model = LightningModel(model, tokenizer)
 
     trainer = Trainer(logger=logger, devices = [0], log_every_n_steps=1, precision="32-true")
-    trainer.test(model=lightning_model, dataloaders=rus_lez_dataloader, ckpt_path=ckpt_path)
-    trainer.test(model=lightning_model, dataloaders=lez_rus_dataloader, ckpt_path=ckpt_path)
+    trainer.test(model=lightning_model, dataloaders=dataloader, ckpt_path = ckpt_path)
 
 if __name__ == "__main__":
     typer.run(test)
