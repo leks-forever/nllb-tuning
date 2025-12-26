@@ -4,11 +4,11 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 
 
-def split_data(df_path: str = "data/bible.csv",  save_dir: str = "data"):
+def split_data(df_path: str = "data/merged_dataset.csv",  save_dir: str = "data"):
     df = pd.read_csv(df_path)
     
-    ru = df['text_ru'].values
-    lezi = df['text_lez'].values
+    ru = df['ru'].values
+    lezi = df['lez'].values
 
     # Шаг 1: Разделить данные на train и temp (сначала отделить 90% для train)
     ru_train, ru_temp, lez_train, lez_temp = train_test_split(

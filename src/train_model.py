@@ -193,7 +193,7 @@ def train(
     lr_monitor = LearningRateMonitor(logging_interval='step')
     lightning_model = LightningModel(model)
 
-    trainer = Trainer(max_steps=110000, callbacks=[checkpoint_callback, lr_monitor], logger=logger, devices = [1], log_every_n_steps=1, val_check_interval = 388, precision="32-true") # check_val_every_n_epoch=1 val_check_interval=4482,
+    trainer = Trainer(max_steps=110000, callbacks=[checkpoint_callback, lr_monitor], logger=logger, devices = "auto", accelerator="auto", log_every_n_steps=1, val_check_interval = 388, precision="32-true") # check_val_every_n_epoch=1 val_check_interval=4482,
     trainer.fit(model=lightning_model, train_dataloaders=train_dataloader, val_dataloaders=val_dataloaders, ckpt_path=checkpoint_path)
 
 
